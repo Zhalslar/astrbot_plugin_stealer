@@ -662,7 +662,7 @@ class PluginAPI:
         try:
             data = await request.get_json() or {}
             hashes = set(data.get("hashes", []))
-            favorite = bool(data.get("favorite", True))
+            favorite = str(data.get("favorite", "true")).lower() != "false"
             if not hashes:
                 return jsonify({"success": True, "count": 0})
             updated = 0
