@@ -151,6 +151,8 @@ class EventHandler:
     def _select_items_for_removal(self, image_index: dict) -> list[tuple[str, int]]:
         """从索引中选出需要移除的条目（按创建时间从旧到新排序后取最旧的）。
 
+        收藏表情包不参与自动清理。
+
         Returns:
             需要移除的 (file_path, created_at) 列表；若无需移除则返回空列表。
         """
@@ -168,6 +170,8 @@ class EventHandler:
 
         image_items: list[tuple[str, int]] = []
         for file_path, image_info in image_index.items():
+            if isinstance(image_info, dict) and image_info.get("is_favorite"):
+                continue
             created_at = int(image_info.get("created_at", 0)) if isinstance(image_info, dict) else 0
             image_items.append((file_path, created_at))
 
