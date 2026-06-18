@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.13] - 2026-06-18
+
+### fixed
+- 修复 NapCat/QQ 平台表情包"偷取"失败：`download_original_image()` 只取 `img.url` 发起 HTTP 下载，但 NapCat 平台 `url` 字段为本地文件路径，导致 `aiohttp` 请求失败（日志: `下载图片失败: /home/.../temp/media_image_xxx.jpg`）
+  - 新增本地路径优先检测：按 `path` → `file` → `url` 顺序检查，若为本地已存在文件则直接返回路径和 GIF 检测结果，跳过 HTTP 下载
+  - 仅当所有字段均非本地路径时才回退到远程下载
+
 ## [2.6.12] - 2026-06-18
 
 ### fixed

@@ -113,13 +113,44 @@ class ImageDownloadService:
     async def download_original_image(self, img: Any) -> tuple[str | None, bool]:
         """下载原始图片文件。
 
+        优先使用图片组件的本地路径（file/url 如果是本地路径），
+        仅对远程 HTTP URL 发起下载请求。
+
         Args:
             img: 图片组件
 
         Returns:
             tuple[str | None, bool]: (临时文件路径, 是否为GIF动图)，失败返回 (None, False)
         """
-        return await self.download_to_temp(getattr(img, "url", ""), log_download=True)
+        img_url = getattr(img, "url", "") or ""
+        img_file = getattr(img, "file", "") or ""
+        img_path = getattr(img, "path", "") or ""
+
+        # 检查是否已经是本地文件路径
+        for candidate in (img_path, img_file, img_url):
+            if candidate and os.path.exists(candidate):
+                content_type = ""
+                try:
+                    with open(candidate, "rb") as f:
+                        header = f.read(8)
+                    if header[:6] in (b"GIF89a", b"GIF87a"):
+                        content_type = "image/gif"
+                    elif header[:8] == b"\x89PNG\r\n\x1a\n":
+                        content_type = "image/png"
+                    elif header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+                        content_type = "image/webp"
+                except OSError:
+                    logger.warning(f"无法读取本地图片文件: {candidate}")
+                    continue
+                _, is_gif = self.detect_file_type(content_type, b"")
+                logger.debug(
+                    f"图片已是本地文件，跳过下载: {candidate} (is_gif={is_gif})"
+                )
+                return candidate, is_gif
+
+        # 回退到 HTTP 下载
+        url = img_url or img_file
+        return await self.download_to_temp(url, log_download=True)
 
     async def download_url_to_temp(self, url: str) -> tuple[str | None, bool]:
         """从 URL 下载文件到临时文件，返回 (temp_path, is_gif)。"""
