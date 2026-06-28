@@ -820,8 +820,9 @@ const TEMPLATE = /* html */ `
 
                 <form @submit.prevent="submitBatchUpload" style="padding:24px">
                     <div v-if="!batchTaskId">
-                        <div class="upload-area" @click="$refs.batchFileInput.click()" style="min-height:150px">
+                        <div class="upload-area" @click="triggerBatchFileInput" style="min-height:150px">
                             <input
+                                v-if="!batchFolderMode"
                                 ref="batchFileInput"
                                 type="file"
                                 accept="image/*"
@@ -829,6 +830,22 @@ const TEMPLATE = /* html */ `
                                 @change="handleBatchFileSelect"
                                 style="display:none"
                             >
+                            <input
+                                v-else
+                                ref="batchFolderInput"
+                                type="file"
+                                accept="image/*"
+                                webkitdirectory
+                                @change="handleBatchFileSelect"
+                                style="display:none"
+                            >
+
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                                <label style="font-size:12px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px">
+                                    <input type="checkbox" v-model="batchFolderMode" style="accent-color:var(--gold-primary)">
+                                    包含子文件夹
+                                </label>
+                            </div>
 
                             <div v-if="batchFiles.length">
                                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
@@ -1247,6 +1264,7 @@ createApp({
 
         const batchUploadOpen = ref(false);
         const batchUploading = ref(false);
+        const batchFolderMode = ref(false);
         const batchFiles = ref([]);
         const batchPreviews = ref([]);
         const batchUploadError = ref(null);
@@ -2110,6 +2128,13 @@ body: JSON.stringify({ hashes: Array.from(selectedImages.value), favorite }),
             batchPreviews.value = [];
         };
 
+        const batchFileInput = ref(null);
+        const batchFolderInput = ref(null);
+        const triggerBatchFileInput = () => {
+            const el = batchFolderMode.value ? batchFolderInput.value : batchFileInput.value;
+            if (el) el.click();
+        };
+
         const handleBatchFileSelect = (e) => {
             const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
             if (files.length === 0) return;
@@ -2572,6 +2597,7 @@ body: JSON.stringify({ key: cat.key }),
 
             batchUploadOpen,
             batchUploading,
+            batchFolderMode,
             batchFiles,
             batchPreviews,
             batchUploadError,
